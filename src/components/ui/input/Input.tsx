@@ -10,7 +10,6 @@ interface Props extends InputHTMLAttributes<HTMLInputElement> {}
 const Input = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
   const { onChange, onBlur, name } = props;
 
-  console.log("props", props);
   if (props.type === "checkbox") {
     return <Checkbox {...props} />;
   }
