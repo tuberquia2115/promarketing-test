@@ -1,12 +1,12 @@
 "use client";
 
 import { SubmitHandler, useForm } from "react-hook-form";
+import { ChangeEvent, useState } from "react";
 
 import { Title } from "../ui/title/Title";
 import { Input } from "../ui/input/Input";
 import { Button } from "../ui/button/Button";
 import { Suppliers } from "@/interfaces";
-import { ChangeEvent, useState } from "react";
 
 interface Props {
   suppliers: Suppliers[];
@@ -127,7 +127,6 @@ export const FormCreateRequest = ({ suppliers }: Props) => {
             className="resize-none hide-calendar-icon w-full relative px-4 py-2 border border-secondary1 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary1 focus:border-transparent"
           />
         )}
-        
       </div>
 
       <div className="w-full flex justify-center pt-8">

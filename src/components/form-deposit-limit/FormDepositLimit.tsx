@@ -1,15 +1,17 @@
 "use client";
 
+import { RegisterOptions, SubmitHandler, useForm } from "react-hook-form";
+
 import { Title } from "../ui/title/Title";
 import { Input } from "../ui/input/Input";
 import { Button } from "../ui/button/Button";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { currencyFormat } from "@/utils/currencyFormat";
 
 interface FormInputs {
-  minimumAmount: number;
-  dailyAmount: number;
-  weeklyAmount: number;
-  monthlyAmount: number;
+  minimumAmount: string;
+  dailyAmount: string;
+  weeklyAmount: string;
+  monthlyAmount: string;
 }
 
 export const FormDepositLimit = () => {
@@ -19,49 +21,68 @@ export const FormDepositLimit = () => {
     getValues,
     setValue,
     watch,
-    formState: { isValid },
+
+    formState: { isValid, errors },
   } = useForm<FormInputs>();
 
   const onSubmit: SubmitHandler<FormInputs> = (data) => {
-    alert(JSON.stringify(data))
+    console.log("data", data);
+    alert(JSON.stringify(data));
   };
 
-  
+  const handleInputChange = (event: any, name: keyof FormInputs) => {
+    const value = event.target.value;
+    const newValue = value.replace(/\D/g, "");
+    const formattedValue = currencyFormat(Number(newValue));
+
+    setValue(name, value === "$" ? "" : formattedValue, { shouldValidate: true });
+  };
+
+  const getRegisterOption = (name: keyof FormInputs): RegisterOptions => ({
+    min: 4,
+    max: 8,
+    required: "This field is required",
+    pattern: {
+      value: /^\$\d+$/,
+      message: "Este campo es obligatorio",
+    },
+    onChange: (e) => handleInputChange(e, name),
+  });
 
   return (
-    <form className="pt-3"  onSubmit={handleSubmit(onSubmit)}>
+    <form className="pt-3" onSubmit={handleSubmit(onSubmit)}>
       <div className="bg-[#E0E4EF4D] p-4 rounded-lg">
         <Title title="AUTOEXCLUSIÓN PROVEEDORES" />
 
         <div className="flex flex-col w-full items-center justify-center pt-6">
           <Input
-            {...register("minimumAmount", { required: "El campo es requerido" })}
+            {...register("minimumAmount", getRegisterOption("minimumAmount"))}
+            type="text"
             className="w-full sm:w-[376px] h-[48px] mb-3"
-            type="number"
             placeholder="Monto mínimo de depósito"
           />
           <Input
-            {...register("dailyAmount", { required: "El campo es requerido" })}
+            {...register("dailyAmount", getRegisterOption("dailyAmount"))}
+            type="text"
             className="w-full sm:w-[376px] h-[48px] mb-3"
-            type="number"
             placeholder="Diario (De 00:00 hasta 24:00 hrs)"
           />
           <Input
-            {...register("weeklyAmount", { required: "El campo es requerido" })}
+            {...register("weeklyAmount", getRegisterOption("weeklyAmount"))}
+            type="text"
             className="w-full sm:w-[376px] h-[48px] mb-3"
-            type="number"
             placeholder="Semanal (De lunes a domingo)"
           />
           <Input
-            {...register("monthlyAmount", { required: "El campo es requerido" })}
+            {...register("monthlyAmount", getRegisterOption("monthlyAmount"))}
+            type="text"
             className="w-full sm:w-[376px] h-[48px]"
-            type="number"
             placeholder="Mensual (Del 1 al 30)"
           />
         </div>
-        <div className="w-full flex justify-center pt-8">
-          <Button type="submit"  label="GUARDAR" className="bg-secondary w-full sm:w-96" />
-        </div>
+      </div>
+      <div className="w-full flex justify-center pt-8">
+        <Button type="submit" label="GUARDAR" className="bg-secondary w-full sm:w-96" />
       </div>
     </form>
   );
