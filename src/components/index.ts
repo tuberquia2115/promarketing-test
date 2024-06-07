@@ -9,3 +9,5 @@ export * from "./ui/input/Input";
 export * from "./ui/tabs/Tabs";
 export * from "./ui/title/Title";
 export * from "./ui/radio/Radio";
+
+export * from './ui/errorMessage/ErrorMessage'

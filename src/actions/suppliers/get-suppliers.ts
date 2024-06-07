@@ -1,16 +1,21 @@
 "use server";
 
-import { Suppliers } from "@/interfaces";
+import { Supplier } from "@/interfaces";
 
-export async function getSuppliers(): Promise<{ ok: boolean; suppliers: Suppliers[] }> {
+export async function getSuppliers(): Promise<{ ok: boolean; suppliers: Supplier[] }> {
   const suppliersUrl = process.env.SUPPLIERS_URL ?? "";
 
   try {
-    const result: Suppliers[] = await fetch(suppliersUrl, { method: "GET" }).then((r) => r.json());
-    console.log("result", result);
+    const result: Supplier[] = await fetch(suppliersUrl, { method: "GET" }).then((r) => r.json());
+
     return {
       ok: true,
-      suppliers: result.map((supplier) => ({ ...supplier, id: supplier.id.toString() })),
+      suppliers: result.map((supplier) => ({
+        ...supplier,
+        description: supplier.description ?? supplier.Descripcion,
+        name: supplier.name ?? supplier.Name,
+        id: supplier.id.toString(),
+      })),
     };
   } catch (error) {
     console.error(error);

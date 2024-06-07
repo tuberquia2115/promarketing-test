@@ -1,64 +1,62 @@
 "use client";
 
+import { ChangeEvent } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { ChangeEvent, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import clsx from "clsx";
 
 import { Title } from "../ui/title/Title";
 import { Input } from "../ui/input/Input";
 import { Button } from "../ui/button/Button";
-import { Suppliers } from "@/interfaces";
+import { Supplier } from "@/interfaces";
+import { ErrorMessage } from "../ui/errorMessage/ErrorMessage";
+import { createRequestSchema } from "@/validation-schemes/create-request-schema";
 
 interface Props {
-  suppliers: Suppliers[];
+  suppliers: Supplier[];
 }
 
 interface FormInputs {
-  selectedSuppliers: { [key: string]: boolean };
-  timeFrame: Date | string;
+  selectedSuppliers: string[];
+  radioOption: "temporary" | "undefined";
+  descriptionByIndefinite: string;
+  temporaryDate: Date;
 }
 
 export const FormCreateRequest = ({ suppliers }: Props) => {
-  const [selectedRadio, setSelectedRadio] = useState<"temporary" | "undefined">("temporary");
-
   const {
     handleSubmit,
     register,
     getValues,
     setValue,
+    reset,
     watch,
-    formState: { isValid },
+    trigger,
+    formState: { isValid, errors },
   } = useForm<FormInputs>({
-    defaultValues: {
-      selectedSuppliers: {},
-      timeFrame: "",
-    },
+    resolver: zodResolver(createRequestSchema),
+    defaultValues: { selectedSuppliers: [], radioOption: "temporary", descriptionByIndefinite: "" },
   });
-  const { selectedSuppliers } = getValues();
 
+  const { selectedSuppliers, radioOption } = getValues();
+  const allChecked = suppliers.every((supplier) => selectedSuppliers.includes(supplier.name));
+
+  console.log("errores", errors);
   const onSubmit: SubmitHandler<FormInputs> = (data) => {
-    alert(JSON.stringify(data))
+    const { radioOption, ...restData } = data;
+    console.log("data", restData);
+    alert(JSON.stringify(restData));
+    reset();
   };
 
   const handleSelectAll = (e: ChangeEvent<HTMLInputElement>) => {
-    const newSelectedSuppliers: { [key: string]: boolean } = {};
+    const isChecked = e.target.checked;
+    const newSelectedSuppliers = suppliers.map((item) => item.name);
 
-    suppliers.forEach((item) => {
-      newSelectedSuppliers[item.id] = e.target.checked;
-    });
-
-    setValue("selectedSuppliers", newSelectedSuppliers);
+    setValue("selectedSuppliers", isChecked ? newSelectedSuppliers : []);
   };
 
-  const handlerSelectionSupplier = (supplier: Suppliers) => {
-    setValue("selectedSuppliers", {
-      ...selectedSuppliers,
-      [supplier.id]: !selectedSuppliers[supplier.id],
-    });
-  };
-
-  const allChecked = suppliers.every((supplier) => selectedSuppliers[supplier.id]);
-
-  watch("selectedSuppliers");
+  watch(["radioOption", "selectedSuppliers"]);
 
   return (
     <form className="pt-3" onSubmit={handleSubmit(onSubmit)}>
@@ -66,7 +64,12 @@ export const FormCreateRequest = ({ suppliers }: Props) => {
         <Title title="AUTOEXCLUSIÓN PROVEEDORES" />
         <div className="flex flex-col pt-4 border-0 border-b-[0.2px] border-b-[#909090] pb-1 ">
           <div className="flex flex-row items-center">
-            <Input type="checkbox" checked={allChecked} onChange={handleSelectAll} />
+            <Input
+              type="checkbox"
+              id="all-checked"
+              checked={allChecked}
+              onChange={handleSelectAll}
+            />
             <p className="pl-2">Todos</p>
           </div>
         </div>
@@ -75,66 +78,71 @@ export const FormCreateRequest = ({ suppliers }: Props) => {
             <div key={supplier.id} className="flex flex-row pb-3 pr-2">
               <Input
                 type="checkbox"
-                checked={!!selectedSuppliers[supplier.id]}
-                onChange={(e) => handlerSelectionSupplier(supplier)}
+                value={supplier.name}
+                id={`${supplier.name}-${supplier.id}`}
+                {...register("selectedSuppliers", { onBlur: () => trigger("selectedSuppliers") })}
               />
               <p className="pl-2">{`${supplier.name}. ${supplier.id}`}</p>
             </div>
           ))}
         </div>
+        {errors.selectedSuppliers && <ErrorMessage message={errors.selectedSuppliers.message} />}
       </div>
 
       <div className="bg-[#E0E4EF4D] mt-4 rounded-lg px-4 py-5">
         <Title title="POR UN PERIODO DE TIEMPO" />
 
         <div className="flex flex-row pt-5 pb-4">
-          <div className="flex flex-row items-center pr-3">
-            <Input
-              type="radio"
-              onChange={() => setSelectedRadio("temporary")}
-              checked={selectedRadio === "temporary"}
-            />
-            <p className="pl-2">Temporal hasta</p>
-          </div>
-          <div className="flex flex-row items-center">
-            <Input
-              type="radio"
-              onChange={() => setSelectedRadio("undefined")}
-              checked={selectedRadio === "undefined"}
-            />
-            <p className="pl-2">Indefinido</p>
-          </div>
+          {["temporary", "undefined"].map((option) => (
+            <div key={option} className="flex flex-row items-center pr-3">
+              <Input key={option} type="radio" {...register("radioOption")} value={option} />
+              <p className="pl-2">
+                {option === "temporary" && "Temporal hasta"}
+                {option === "undefined" && "Indefinido"}
+              </p>
+            </div>
+          ))}
         </div>
-        {selectedRadio === "temporary" && (
-          <Input
-            type="date"
-            {...register("timeFrame", { required: "La fecha es requerida" })}
-            className="uppercase"
-            placeholder="DD/MM/AAAA*"
-          />
+        {radioOption === "temporary" && (
+          <>
+            <Input
+              type="date"
+              {...register("temporaryDate", {
+                required: "La fecha es requerida",
+                onBlur: () => trigger("temporaryDate"),
+              })}
+              className="uppercase"
+            />
+            {errors.temporaryDate && <ErrorMessage message={errors.temporaryDate.message} />}
+          </>
         )}
-        {selectedRadio === "undefined" && (
-          <textarea
-            {...register("timeFrame", {
-              required: "La descripción es requerida",
-              max: 255,
-              min: 8,
-            })}
-            rows={5}
-            minLength={8}
-            maxLength={255}
-            placeholder="¿Por que indefinido?"
-            className="resize-none hide-calendar-icon w-full relative px-4 py-2 border border-secondary1 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary1 focus:border-transparent"
-          />
+        {radioOption === "undefined" && (
+          <>
+            <textarea
+              {...register("descriptionByIndefinite", {
+                required: "Este campo es requerido",
+                onBlur: () => trigger("descriptionByIndefinite"),
+              })}
+              rows={5}
+              placeholder="¿Por que indefinido?"
+              className="resize-none hide-calendar-icon w-full relative px-4 py-2 border border-secondary1 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary1 focus:border-transparent"
+            />
+            {errors.descriptionByIndefinite && (
+              <ErrorMessage message={errors.descriptionByIndefinite.message} />
+            )}
+          </>
         )}
       </div>
 
       <div className="w-full flex justify-center pt-8">
         <Button
           type="submit"
-          label="ENVIAR"
-          className="bg-primary w-full sm:w-80"
           disabled={!isValid}
+          label="ENVIAR"
+          className={clsx("w-full sm:w-80", {
+            "bg-primary": isValid,
+            "bg-[#091B5080]": !isValid,
+          })}
         />
       </div>
     </form>

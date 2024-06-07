@@ -8,24 +8,19 @@ import { Radio } from "../radio/Radio";
 interface Props extends InputHTMLAttributes<HTMLInputElement> {}
 
 const Input = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
-  const { onChange, onBlur, name } = props;
-
   if (props.type === "checkbox") {
-    return <Checkbox {...props} />;
+    return <Checkbox ref={ref} {...props} />;
   }
 
   if (props.type === "radio") {
-    return <Radio {...props} />;
+    return <Radio ref={ref} {...props} />;
   }
 
   return (
     <input
       {...props}
-      name={name}
       ref={ref}
-      onChange={onChange}
-      onBlur={onBlur}
-      className={`${props.className} text-[#909090] hide-calendar-icon w-[355px] relative px-4 py-2 border border-secondary1 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary1 focus:border-transparent`}
+      className={`${props.className} placeholder:text-[#909090] hide-calendar-icon w-[355px] relative px-4 py-2 border border-secondary1 rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary1 focus:border-transparent`}
     />
   );
 });
